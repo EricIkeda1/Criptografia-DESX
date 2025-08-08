@@ -23,30 +23,58 @@ def unpad(text: bytes) -> bytes:
     pad_len = text[-1]
     return text[:-pad_len]
 
-if __name__ == "__main__":
+def hex_to_bytes(hex_str: str) -> bytes:
+    hex_str = hex_str.replace(" ", "")
+    return bytes.fromhex(hex_str)
+
+def main():
     key_des = b'8bytekey'
     key1 = b'12345678'
     key2 = b'abcdefgh'
 
-    print("Digite uma mensagem para criptografar (ou 'sair' para encerrar):")
     while True:
-        msg = input("> ")
-        if msg.lower() == "sair":
+        print("\nEscolha a opção:")
+        print("1 - Criptografar")
+        print("2 - Descriptografar")
+        print("0 - Sair")
+        opcao = input("> ")
+
+        if opcao == "0":
+            print("Encerrando...")
             break
+        elif opcao == "1":
+            texto = input("Digite o texto para criptografar:\n> ")
+            pt = pad(texto.encode('utf-8'))
+            ct = b""
+            for i in range(0, len(pt), 8):
+                bloco = pt[i:i+8]
+                ct += desx_encrypt(bloco, key_des, key1, key2)
+            print("Texto criptografado (hex):")
+            print(ct.hex())
+        elif opcao == "2":
+            hex_text = input("Digite o texto criptografado em hexadecimal:\n> ")
+            try:
+                ct_bytes = hex_to_bytes(hex_text)
+            except ValueError:
+                print("Entrada hexadecimal inválida.")
+                continue
 
-        pt = pad(msg.encode('utf-8'))
-        ct = b""
+            if len(ct_bytes) % 8 != 0:
+                print("O texto criptografado deve ter múltiplos de 8 bytes.")
+                continue
 
-        for i in range(0, len(pt), 8):
-            block = pt[i:i+8]
-            ct += desx_encrypt(block, key_des, key1, key2)
+            dt = b""
+            for i in range(0, len(ct_bytes), 8):
+                bloco = ct_bytes[i:i+8]
+                dt += desx_decrypt(bloco, key_des, key1, key2)
+            try:
+                dt = unpad(dt)
+                print("Texto descriptografado:")
+                print(dt.decode('utf-8'))
+            except:
+                print("Erro ao remover padding ou decodificar o texto.")
+        else:
+            print("Opção inválida, tente novamente.")
 
-        print("Criptografado (hex):", ct.hex())
-
-        dt = b""
-        for i in range(0, len(ct), 8):
-            block = ct[i:i+8]
-            dt += desx_decrypt(block, key_des, key1, key2)
-
-        dt = unpad(dt)
-        print("Descriptografado:", dt.decode('utf-8'))
+if __name__ == "__main__":
+    main()
